@@ -1,0 +1,35 @@
+import { useState, useEffect} from 'react';
+import { ethers } from 'ethers';
+import keynesianBeautyContestABI from '../Contracts/keynesianBeautyContestABI.json';
+import contractAddresses from '../Contracts/contractAddresses.json';
+
+const provider = new ethers.JsonRpcProvider(`https://testnet.inco.org`);
+
+const contractABI = keynesianBeautyContestABI;
+const contractAddress = contractAddresses[0].keynesianBeautyContest;
+const contract = new ethers.Contract(contractAddress, contractABI, provider);
+
+export const FetchPlayerCount = () => {
+    const [playerCount, setPlayerCount] = useState('');
+
+    useEffect(() => {
+        const fetchPlayerCount = async () => {
+            try {
+                const rawPlayerCount = await contract.playerCount();
+                const stringPlayerCount = Intl.NumberFormat().format(rawPlayerCount)
+                const formattedPlayerCount = stringPlayerCount === "1"
+                    ? '1 Player'
+                    : stringPlayerCount + " Players";
+                setPlayerCount(formattedPlayerCount);
+            } catch (error) {
+                console.error('Failed to fetch player count:', error);
+                setPlayerCount('-- Players');
+            }
+        };
+
+        const intervalId = setInterval(fetchPlayerCount, 1000);
+        return () => clearInterval(intervalId);
+    }, []);
+
+    return playerCount;
+};
