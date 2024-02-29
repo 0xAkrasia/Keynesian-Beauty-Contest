@@ -9,7 +9,7 @@ contract KeynsianBeautyContest is EIP712WithModifier {
     address public owner;
 
     struct EncryptedVotes {
-        euint32[8] encryptedChoices; // Array of encrypted votes for each candidate
+        euint8 encryptedChoices; // Single euint8 to store all 8 binary votes
     }
 
     mapping(address => bool) public hasVoted;
@@ -19,7 +19,7 @@ contract KeynsianBeautyContest is EIP712WithModifier {
 
     euint32[8] public candidates;
     uint256[8] public totals;
-    uint[8] public sortedIndex;
+    uint8 public resultBit;
     uint8 public max_point;
     address[] public winners;
 
@@ -41,34 +41,22 @@ contract KeynsianBeautyContest is EIP712WithModifier {
         _;
     }
 
-    function castVote(euint32[8] calldata votes) public {
+    function castVote(bytes calldata vote) public {
         require(!gameOver, "The game has ended");
         require(!hasVoted[msg.sender], "Already voted");
+        euint8 totalVotes = TFHE.asEuint8(0);
+        euint8 encryptedVote = TFHE.asEuint8(vote);
 
-        // First initialize total votes to a uint32 zero
-        euint32 totalVotes;
-
-        // Iterate over the votes to check they are valid
-        for (uint i = 0; i < votes.length; i++) {
-            ebool isVoteZero = TFHE.eq(votes[i], TFHE.asEuint32(0));
-            ebool isVoteOne = TFHE.eq(votes[i], TFHE.asEuint32(1));
-            ebool z_or_one = TFHE.or(isVoteZero, isVoteOne);
-            TFHE.optReq(z_or_one);
-            TFHE.add(totalVotes, votes[i]);
+        for (uint8 i = 0; i < 8; i++) {
+            euint8 bitMask = TFHE.asEuint8(1 << i);
+            euint8 voteBit = TFHE.and(encryptedVote, bitMask);
+            totalVotes = TFHE.add(totalVotes, voteBit);
+            candidates[i] = TFHE.add(candidates[i], voteBit);
         }
-        ebool eqFour = TFHE.eq(totalVotes, TFHE.asEuint32(4));
-        TFHE.optReq(eqFour);
-
-        // Save the encrypted votes
-        encryptedVotes[msg.sender] = EncryptedVotes(votes);
-
-        // Add each vote to the corresponding candidate
-        for (uint i = 0; i < candidates.length; i++) {
-            candidates[i] = TFHE.add(candidates[i], votes[i]);
-        }
-
+        encryptedVotes[msg.sender] = EncryptedVotes(encryptedVote);
         hasVoted[msg.sender] = true;
     }
+
 
     function quickSortWithIndices(uint[] memory arr, uint[] memory indices, int left, int right) internal pure {
         int i = left;
@@ -95,51 +83,36 @@ contract KeynsianBeautyContest is EIP712WithModifier {
     }
 
     function revealResult() public OnlyOwner {
-        // Populate the totals and indices
+        require(!gameOver, "The game has already ended");
         uint[] memory totalsCopy = new uint[](totals.length);
         for (uint i = 0; i < totals.length; i++) {
             totalsCopy[i] = TFHE.decrypt(candidates[i]); // Assuming this is correct
         }
-        
         uint[] memory indices = new uint[](totals.length);
         for (uint i = 0; i < totals.length; i++) {
             indices[i] = i;
         }
-
-        // Sort the totals with their corresponding indices
         quickSortWithIndices(totalsCopy, indices, 0, int(totalsCopy.length - 1));
 
-        // Update the sortedIndex with sorted indices
+        resultBit = 0;
         for (uint i = 0; i < totals.length; i++) {
-            sortedIndex[i] = indices[i];
+            if (i < 4) {
+                resultBit |= (uint8(1) << uint8(indices[i]));
+            }
         }
 
         gameOver = true;
     }
 
-    function viewOwnVote(bytes32 publicKey, bytes calldata signature) public view onlySignedPublicKey(publicKey, signature) returns (bytes[] memory) {
-        require(hasVoted[msg.sender], "No vote recorded for this address");
-
-        EncryptedVotes storage vote = encryptedVotes[msg.sender];
-        bytes[] memory reencryptedVotes = new bytes[](8);
-
-        for (uint i = 0; i < vote.encryptedChoices.length; i++) {
-            reencryptedVotes[i] = TFHE.reencrypt(vote.encryptedChoices[i], publicKey);
-        }
-
-        return reencryptedVotes;
+    function viewOwnVote(bytes32 publicKey, bytes calldata signature) public view onlySignedPublicKey(publicKey, signature) returns (bytes memory) {
+        return TFHE.reencrypt(encryptedVotes[msg.sender].encryptedChoices, publicKey);
     }
 
     function winCheck() public gameEnded {
         require(hasVoted[msg.sender], "You haven't voted");
-        uint32[8] memory decryptedVotes = getDecryptedVotesFor(msg.sender);
+        uint8 myVote = TFHE.decrypt(encryptedVotes[msg.sender].encryptedChoices);
 
-        uint8 points = 0;
-        for (uint8 i = 0; i < 4; i++) {
-            if (decryptedVotes[sortedIndex[i]] == 1) {
-                points++;
-            }
-        }
+        uint8 points = resultBit ^ myVote;
         if (points > max_point) {
             delete winners;
             max_point = points;
@@ -147,13 +120,6 @@ contract KeynsianBeautyContest is EIP712WithModifier {
         } else if (points == max_point) {
             winners.push(msg.sender);
         }
-    }
-
-    function getDecryptedVotesFor(address voter) internal view returns (uint32[8] memory decryptedVotes) {
-        for (uint8 i = 0; i < 8; i++) {
-            decryptedVotes[i] = TFHE.decrypt(encryptedVotes[voter].encryptedChoices[i]);
-        }
-        return decryptedVotes;
     }
 
     function payWinners(uint32 start, uint32 offset) public OnlyOwner gameEnded {
