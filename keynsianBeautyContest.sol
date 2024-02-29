@@ -20,12 +20,12 @@ contract KeynsianBeautyContest is EIP712WithModifier {
     euint32[8] public candidates;
     uint256[8] public totals;
     uint8 public resultBit;
-    uint8 public max_point;
+    uint8 public min_point;
     address[] public winners;
 
     constructor() EIP712WithModifier("Authorization token", "1") {
         owner = msg.sender;
-        max_point = 0;
+        min_point = 255;
         for(uint i = 0; i < candidates.length; i++) {
             candidates[i] = TFHE.asEuint32(0);
         }
@@ -113,7 +113,7 @@ contract KeynsianBeautyContest is EIP712WithModifier {
         uint8 myVote = TFHE.decrypt(encryptedVotes[msg.sender].encryptedChoices);
 
         uint8 points = resultBit ^ myVote;
-        if (points > max_point) {
+        if (points < min_point) {
             delete winners;
             max_point = points;
             winners.push(msg.sender);
