@@ -115,9 +115,9 @@ contract KeynsianBeautyContest is EIP712WithModifier {
         uint8 points = resultBit ^ myVote;
         if (points < min_point) {
             delete winners;
-            max_point = points;
+            min_point = points;
             winners.push(msg.sender);
-        } else if (points == max_point) {
+        } else if (points == min_point) {
             winners.push(msg.sender);
         }
     }

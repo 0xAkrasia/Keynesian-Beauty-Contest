@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "fhevm": "^0.3.0",
+    "fhevmjs": "^0.3.2"
+  },
+  "devDependencies": {
+    "ethers": "^6.11.1"
+  }
+}
