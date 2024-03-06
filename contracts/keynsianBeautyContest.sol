@@ -64,8 +64,8 @@ contract KeynsianBeautyContest is EIP712WithModifier {
         if(i >= j) return;
         uint pivot = arr[uint(left + (right - left) / 2)];
         while (i <= j) {
-            while (arr[uint(i)] < pivot) i++;
-            while (pivot < arr[uint(j)]) j--;
+            while (arr[uint(i)] > pivot) i++;
+            while (pivot > arr[uint(j)]) j--;
             if (i <= j) {
                 // Swap the values
                 (arr[uint(i)], arr[uint(j)]) = (arr[uint(j)], arr[uint(i)]);

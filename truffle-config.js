@@ -8,7 +8,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
         provider: () => new HDWalletProvider(mnemoic, `https://testnet.inco.org`),
         network_id: 9090,
         gas: 5500000,
-        gasPrice: 10000000000,
+        gasPrice: 15000000,
         confirmations: 2,
       },
      },

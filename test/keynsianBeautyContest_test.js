@@ -29,6 +29,7 @@ contract("KeynsianBeautyContest Tests", accounts => {
     instance = await createInstance({ chainId, publicKey });
     console.log("FHE instance created", instance);
     keynesianBeautyContest = await KeynsianBeautyContest.new({ from: deployer });
+    //keynesianBeautyContest = await KeynsianBeautyContest.at('0x22cEe6ffECE58f7DE72B424Ac7e1453796dc33F4'); // Passed CONTRACT ADDRESS
     console.log("KeynesianBeautyContest deployed at", keynesianBeautyContest.address);
   });
 
@@ -55,23 +56,22 @@ contract("KeynsianBeautyContest Tests", accounts => {
       assert.equal(resultBit, "60", "The result bit should be 60 which is binary 00111100");
 
       //// Everyone checks if they won
-      //await keynesianBeautyContest.winCheck({ from: addr1 });
-      //await keynesianBeautyContest.winCheck({ from: addr2 });
-      //await keynesianBeautyContest.winCheck({ from: addr3 });
-      //await keynesianBeautyContest.winCheck({ from: addr4 });
-      //await keynesianBeautyContest.winCheck({ from: addr5 });
+      await keynesianBeautyContest.winCheck({ from: addr1 });
+      await keynesianBeautyContest.winCheck({ from: addr2 });
+      await keynesianBeautyContest.winCheck({ from: addr3 });
+      await keynesianBeautyContest.winCheck({ from: addr4 });
+      await keynesianBeautyContest.winCheck({ from: addr5 });
 
-      //// Addr5 should be the winner
-      //const winners = await keynesianBeautyContest.winners();
-      //assert.equal(winners.length, 1, "There should be exactly one winner");
-      //assert.equal(winners[0], addr5, "The winner should be addr5");
+      // Addr5 should be the winner
+      const winners = await keynesianBeautyContest.winners(0);
+      assert.equal(winners, addr5, "The winner should be addr5");
 
-      //// Pay the winners - split the contract balance between the winners
-      //const contractBalanceBefore = await web3.eth.getBalance(keynesianBeautyContest.address);
-      //const winnerBalanceBefore = await web3.eth.getBalance(addr5);
-      //await keynesianBeautyContest.payWinners(0, winners.length, { from: deployer });
+      // Pay the winners - split the contract balance between the winners
+      const contractBalanceBefore = await web3.eth.getBalance(keynesianBeautyContest.address);
+      const winnerBalanceBefore = await web3.eth.getBalance(addr5);
+      await keynesianBeautyContest.payWinners(0, 1, { from: deployer });
 
-      //// Check payment
+      // Check payment
       //const winnerBalanceAfter = await web3.eth.getBalance(addr5);
       //assert.isTrue(new web3.utils.BN(winnerBalanceAfter).gt(new web3.utils.BN(winnerBalanceBefore)), "Winner should have been paid");
     });
