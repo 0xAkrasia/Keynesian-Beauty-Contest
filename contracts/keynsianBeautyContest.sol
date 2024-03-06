@@ -18,7 +18,7 @@ contract KeynsianBeautyContest is EIP712WithModifier {
     bool public gameOver;
 
     euint32[8] public candidates;
-    uint256[8] public totals;
+    uint32[8] public totals;
     uint8 public resultBit;
     uint8 public min_point;
     address[] public winners;
@@ -44,14 +44,14 @@ contract KeynsianBeautyContest is EIP712WithModifier {
     function castVote(bytes calldata vote) public {
         require(!gameOver, "The game has ended");
         require(!hasVoted[msg.sender], "Already voted");
-        euint8 totalVotes = TFHE.asEuint8(0);
         euint8 encryptedVote = TFHE.asEuint8(vote);
 
         for (uint8 i = 0; i < 8; i++) {
             euint8 bitMask = TFHE.asEuint8(1 << i);
             euint8 voteBit = TFHE.and(encryptedVote, bitMask);
-            totalVotes = TFHE.add(totalVotes, voteBit);
-            candidates[i] = TFHE.add(candidates[i], voteBit);
+            ebool isVoted = TFHE.eq(voteBit, bitMask);
+            euint8 cnt = TFHE.cmux(isVoted, TFHE.asEuint8(1), TFHE.asEuint8(0));
+            candidates[i] = TFHE.add(candidates[i], cnt);
         }
         encryptedVotes[msg.sender] = EncryptedVotes(encryptedVote);
         hasVoted[msg.sender] = true;
