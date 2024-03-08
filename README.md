@@ -5,11 +5,11 @@ Follow these steps to set up your environment and run tests for the Incogames co
 ### Step 1: Deploy Contract
 
 ### Step 2: Votes
-2.1 Addr1 votes `00001111`
-2.2 Addr2 votes `00001111`
-2.3 Addr3 votes `11110000`
-2.4 Addr4 votes `11110000`
-2.5 Addr5 votes `00111100`
+1. Addr1 votes `00001111`
+2. Addr2 votes `00001111`
+3. Addr3 votes `11110000`
+4. Addr4 votes `11110000`
+5. Addr5 votes `00111100`
 
 ### Step 3: Result bit should be: `00111100`
 
