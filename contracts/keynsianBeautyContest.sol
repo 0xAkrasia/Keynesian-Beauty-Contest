@@ -82,6 +82,27 @@ contract KeynsianBeautyContest is EIP712WithModifier {
             quickSortWithIndices(arr, indices, i, right);
     }
 
+    function bubbleSortWithIndices(uint[] memory arr, uint[] memory indices) internal pure {
+        bool swapped;
+        uint length = arr.length;
+        for (uint i = 0; i < length - 1; i++) {
+            swapped = false;
+            for (uint j = 0; j < length - i - 1; j++) {
+                if (arr[j] < arr[j + 1]) {
+                    // Swap the values
+                    (arr[j], arr[j + 1]) = (arr[j + 1], arr[j]);
+                    // Swap the indices
+                    (indices[j], indices[j + 1]) = (indices[j + 1], indices[j]);
+                    swapped = true;
+                }
+            }
+            // If no two elements were swapped by inner loop, then break
+            if (!swapped) {
+                break;
+            }
+        }
+    }
+
     function revealResult() public OnlyOwner {
         require(!gameOver, "The game has already ended");
         uint[] memory totalsCopy = new uint[](totals.length);
@@ -92,7 +113,8 @@ contract KeynsianBeautyContest is EIP712WithModifier {
         for (uint i = 0; i < totals.length; i++) {
             indices[i] = i;
         }
-        quickSortWithIndices(totalsCopy, indices, 0, int(totalsCopy.length - 1));
+        // quickSortWithIndices(totalsCopy, indices, 0, int(totalsCopy.length - 1));
+        bubbleSortWithIndices(totalsCopy, indices); // Use bubble sort instead of quick sort
 
         resultBit = 0;
         for (uint i = 0; i < totals.length; i++) {
