@@ -1,70 +1,75 @@
-# incogames
+# Incogames Test Instructions
 
-## test 
+Follow these steps to set up your environment and run tests for the Incogames contract:
 
-1. Deploy contract
-2. Votes 
-    2.1 Addr1 vote 00001111
-    2.2 Addr1 vote 00001111
-    2.3 Addr3 vote 11110000
-    2.4 Addr4 vote 11110000
-    2.5 Addr5 vote 00111100
-3. result bit should be: 00111100
-4. each address will call winCheck, winner should be Addr5
-5. payWinners will pay to Addr5
+### Step 1: Deploy Contract
 
-## Run test
-Here's a step-by-step guide to correctly set up your environment to test the contract:
+### Step 2: Votes
+2.1 Addr1 votes `00001111`
+2.2 Addr2 votes `00001111`
+2.3 Addr3 votes `11110000`
+2.4 Addr4 votes `11110000`
+2.5 Addr5 votes `00111100`
 
+### Step 3: Result bit should be: `00111100`
 
+### Step 4: Win Check
+Each address will call `winCheck`; the winner should be Addr5.
 
-Install Truffle: If you haven't installed Truffle, install it globally with npm:
+### Step 5: Pay Winners
+The `payWinners` function will pay to Addr5.
 
+## Run Test
 
-   npm install -g truffle
+Here's a detailed guide to prepare your environment for testing the contract:
 
+1. **Install Truffle**: If Truffle is not already installed, use npm to install it globally:
 
-Set Up Test Network Configuration: Ensure your truffle-config.js file has an entry for the test network (I'm treating Inco as a generic Ethereum-compatible network for illustration):
+    ```
+    npm install -g truffle
+    ```
 
+2. **Set Up Test Network Configuration**: Modify your `truffle-config.js` to include a configuration for the test network:
 
-   const HDWalletProvider = require('@truffle/hdwallet-provider');
-   const infuraKey = "your-infura-api-key";
-   const privateKey = "your-private-key";
+    ```javascript
+    const HDWalletProvider = require('@truffle/hdwallet-provider');
+    const infuraKey = "your-infura-api-key";
+    const privateKey = "your-private-key";
 
-   module.exports = {
-     networks: {
-       inco: { // Ensure this is the correct config name for your case
-         provider: () => new HDWalletProvider(privateKey, `https://testnet.inco.org`),
-         network_id: "*", // Use '*' for matching any network id or specify the correct one
-         gas: 5500000,
-         gasPrice: 10000000000,
-         confirmations: 2,
+    module.exports = {
+       networks: {
+         inco: { // This should be the correct config name for your case
+           provider: () => new HDWalletProvider(privateKey, `https://testnet.inco.org`),
+           network_id: "*", // Use '*' to match any network id or specify an exact one
+           gas: 5500000,
+           gasPrice: 10000000000,
+           confirmations: 2,
+         },
+         // ... other network configs
        },
-       // ... other network configs
-     },
-     // ... other config options
-   };
+       // ... other config options
+    };
+    ```
 
+    - Ensure you replace `your-infura-api-key` and `your-private-key` with actual values.
 
-Create an Account: If you haven't done this already, create a test account and get some test Inco tokens from a faucet if they are required for transactions.
+3. **Create an Account**: Create a test account and acquire some test Inco tokens from a faucet if they are needed for making transactions.
 
+4. **Deploy Contracts**: Compile and migrate the contracts to the Inco test network:
 
-Deploy Contracts: Compile and migrate your contracts to the Inco test network:
+    ```
+    truffle compile
+    truffle migrate --network inco
+    ```
 
+5. **Write Test Scripts**: Place your test scripts in the `test` directory. Make sure your scripts are compatible with Mocha and Chai frameworks, as Truffle uses them for testing.
 
+6. **Run Tests**: Execute the tests using the command below:
 
-   truffle compile
-   truffle migrate --network inco
+    ```
+    truffle test --network inco
+    ```
 
+    This command will execute your tests on the Inco test network, ensuring your smart contract behaves as expected.
 
-Write Test Scripts: Your test script should be in the test directory and should be written in a way compatible with Mocha and Chai, as these are the frameworks that Truffle uses for testing. Your provided test script looks adequate, but remember to update infuraKey and privateKey with your actual data, and make sure your HDWalletProvider is configured correctly.
-
-
-Run Tests: Execute the tests on the configured network:
-
-
-
-   truffle test --network inco
-
-This process will run your tests on the Inco test network. Adjustments may be necessary depending on the network's specific requirements and API compatibility.
-
+Make sure to adjust any specific parameters or configurations based on the actual requirements of the Incogames contract and the Inco network environment.
