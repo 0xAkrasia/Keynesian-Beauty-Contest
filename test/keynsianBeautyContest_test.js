@@ -28,7 +28,7 @@ contract("KeynsianBeautyContest Tests", accounts => {
     const publicKey = decoded[0];
     instance = await createInstance({ chainId, publicKey });
     console.log("FHE instance created", instance);
-    keynesianBeautyContest = await KeynsianBeautyContest.new({ from: deployer });
+    keynesianBeautyContest = await KeynsianBeautyContest.new(8, 4, { from: deployer });
     //keynesianBeautyContest = await KeynsianBeautyContest.at('0x22cEe6ffECE58f7DE72B424Ac7e1453796dc33F4'); // Passed CONTRACT ADDRESS
     console.log("KeynesianBeautyContest deployed at", keynesianBeautyContest.address);
   });

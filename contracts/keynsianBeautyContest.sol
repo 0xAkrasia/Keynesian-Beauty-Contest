@@ -21,11 +21,15 @@ contract KeynsianBeautyContest is EIP712WithModifier {
     uint32[8] public totals;
     uint8 public resultBit;
     uint8 public min_point;
+    uint8 public nCandidates;
+    uint8 public topK;
     address[] public winners;
 
-    constructor() EIP712WithModifier("Authorization token", "1") {
+    constructor(uint8 _nCandidates, uint8 _topK) EIP712WithModifier("Authorization token", "1") {
         owner = msg.sender;
         min_point = 255;
+        nCandidates = _nCandidates;
+        topK = _topK;
         for(uint i = 0; i < candidates.length; i++) {
             candidates[i] = TFHE.asEuint32(0);
         }
@@ -46,7 +50,7 @@ contract KeynsianBeautyContest is EIP712WithModifier {
         require(!hasVoted[msg.sender], "Already voted");
         euint8 encryptedVote = TFHE.asEuint8(vote);
 
-        for (uint8 i = 0; i < 8; i++) {
+        for (uint8 i = 0; i < nCandidates; i++) {
             euint8 bitMask = TFHE.asEuint8(1 << i);
             euint8 voteBit = TFHE.and(encryptedVote, bitMask);
             ebool isVoted = TFHE.eq(voteBit, bitMask);
@@ -105,22 +109,20 @@ contract KeynsianBeautyContest is EIP712WithModifier {
 
     function revealResult() public OnlyOwner {
         require(!gameOver, "The game has already ended");
-        uint[] memory totalsCopy = new uint[](totals.length);
-        for (uint i = 0; i < totals.length; i++) {
+        uint[] memory totalsCopy = new uint[](nCandidates);
+        for (uint i = 0; i < nCandidates; i++) {
             totalsCopy[i] = TFHE.decrypt(candidates[i]); // Assuming this is correct
         }
         uint[] memory indices = new uint[](totals.length);
-        for (uint i = 0; i < totals.length; i++) {
+        for (uint i = 0; i < nCandidates; i++) {
             indices[i] = i;
         }
         // quickSortWithIndices(totalsCopy, indices, 0, int(totalsCopy.length - 1));
         bubbleSortWithIndices(totalsCopy, indices); // Use bubble sort instead of quick sort
 
         resultBit = 0;
-        for (uint i = 0; i < totals.length; i++) {
-            if (i < 4) {
-                resultBit |= (uint8(1) << uint8(indices[i]));
-            }
+        for (uint i = 0; i < topK; i++) {
+            resultBit |= (uint8(1) << uint8(indices[i]));
         }
 
         gameOver = true;
@@ -134,7 +136,7 @@ contract KeynsianBeautyContest is EIP712WithModifier {
         require(hasVoted[msg.sender], "You haven't voted");
         uint8 myVote = TFHE.decrypt(encryptedVotes[msg.sender].encryptedChoices);
 
-        uint8 points = resultBit ^ myVote;
+        uint8 points = resultBit ^ myVote; // TODO, check number of wins instead of points
         if (points < min_point) {
             delete winners;
             min_point = points;
