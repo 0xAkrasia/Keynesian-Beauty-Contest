@@ -1,3 +1,8 @@
 node_modules
 build
 mne
+
+fe-keynesian/node_modules
+fe-keynesian/.appfairy
+fe-keynesian/.git
+fe-keynesian/.gitignore
