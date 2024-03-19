@@ -225,7 +225,12 @@
 }
 
 .af-view .af-class-item.af-class-selected {
-  border-color: var(--brand);
+  border: 2px solid var(--brand); /* Adjust the border thickness */
+  opacity: 0.7; /* Slightly fade the image to indicate selection */
+  transform: scale(1.1); /* Scale the image to make it pop */
+  box-shadow: 0 0 10px var(--brand); /* Add a shadow with the brand color */
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease; /* Smooth transition for the effect */
+  cursor: pointer; /* Change cursor to indicate the item is selectable */
 }
 
 .af-view .af-class-img {

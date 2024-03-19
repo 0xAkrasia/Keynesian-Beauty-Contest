@@ -11,6 +11,49 @@ const scripts = [
 let Controller
 
 class IndexView extends React.Component {
+
+  constructor(props) {
+    super(props);
+
+    // Initialize the state with an empty set for selected images
+    this.state = {
+      selectedImages: new Set(),
+      countdownTime: 12 * 3600 + 23 * 60 + 41,
+    };
+
+    this.handleImageClick = this.handleImageClick.bind(this);
+    this.tick = this.tick.bind(this);
+  }
+
+  handleImageClick(imageId) {
+    this.setState(prevState => {
+      const newSelectedImages = new Set(prevState.selectedImages);
+
+      if (newSelectedImages.has(imageId)) {
+        newSelectedImages.delete(imageId); // Deselect if already selected
+      } else if (newSelectedImages.size < 4) {
+        newSelectedImages.add(imageId); // Select if less than 4 are selected already
+      }
+
+      return { selectedImages: newSelectedImages };
+    });
+  }
+
+  renderImageItems() {
+    const imageIds = ['img', 'img_1', 'img_2', 'img_3', 'img_4', 'img_5', 'img_6', 'img_7'];
+    return imageIds.map(id => {
+      const isSelected = this.state.selectedImages.has(id);
+      const imageClassName = `af-class-item${isSelected ? ' af-class-selected' : ''}`;
+      const imagePath = `images/${id}.png`;
+
+      return (
+        <div key={id} className={imageClassName} onClick={() => this.handleImageClick(id)}>
+          <img src={imagePath} loading="lazy" width={211} height={211} alt="" className="af-class-img" />
+        </div>
+      );
+    });
+  }
+
   static get Controller() {
     if (Controller) return Controller
 
@@ -35,6 +78,7 @@ class IndexView extends React.Component {
     const htmlEl = document.querySelector('html')
     htmlEl.dataset['wfPage'] = '65f8d5e4ed1fa366d79954e6'
     htmlEl.dataset['wfSite'] = '65f8d5e4ed1fa366d79954b8'
+    this.countdownTimer = setInterval(this.tick, 1000);
 
     scripts.concat(null).reduce((active, next) => Promise.resolve(active).then((active) => {
       const loading = active.loading.then((script) => {
@@ -51,6 +95,25 @@ class IndexView extends React.Component {
     }))
   }
 
+  componentWillUnmount() {
+    // Clear the countdown interval to prevent memory leaks
+    clearInterval(this.countdownTimer);
+  }
+
+  tick() {
+    this.setState(prevState => ({
+      countdownTime: Math.max(prevState.countdownTime - 1, 0),
+    }));
+  }
+
+  renderCountdown() {
+    const { countdownTime } = this.state;
+    const hours = Math.floor(countdownTime / 3600);
+    const minutes = Math.floor((countdownTime % 3600) / 60);
+    const seconds = countdownTime % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
   render() {
     const proxies = IndexView.Controller !== IndexView ? transformProxies(this.props.children) : {
 
@@ -58,7 +121,8 @@ class IndexView extends React.Component {
 
     return (
       <span>
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style dangerouslySetInnerHTML={{
+          __html: `
           @import url(/css/normalize.css);
           @import url(/css/webflow.css);
           @import url(/css/melee.webflow.css);
@@ -78,7 +142,7 @@ class IndexView extends React.Component {
                   </div>
                   <div className="af-class-typehead">
                     <div className="af-class-p_body">Time to reveal</div>
-                    <div className="af-class-h2">12:23:41</div>
+                    <div className="af-class-h2">{this.renderCountdown()}</div>
                   </div>
                 </div>
               </div>
@@ -96,14 +160,7 @@ class IndexView extends React.Component {
               <div className="w-layout-vflex af-class-flex-block">
                 <div className="af-class-p_body">Select 4 faces to bet</div>
                 <div className="af-class-selection-grid">
-                  <div className="af-class-item af-class-selected"><img src="images/img.png" loading="lazy" width={211} height={212} alt className="af-class-img" /></div>
-                  <div className="af-class-item"><img src="images/img_1.png" loading="lazy" width={211} height={212} alt className="af-class-img" /></div>
-                  <div className="af-class-item"><img src="images/img_2.png" loading="lazy" width={211} height={212} alt className="af-class-img" /></div>
-                  <div className="af-class-item"><img src="images/img_3.png" loading="lazy" width={211} height={212} alt className="af-class-img" /></div>
-                  <div className="af-class-item"><img src="images/img_4.png" loading="lazy" width={211} height={211} alt className="af-class-img" /></div>
-                  <div className="af-class-item"><img src="images/img_5.png" loading="lazy" width={211} height={211} alt className="af-class-img" /></div>
-                  <div className="af-class-item"><img src="images/img_6.png" loading="lazy" width={211} height={211} alt className="af-class-img" /></div>
-                  <div className="af-class-item"><img src="images/img_7.png" loading="lazy" width={211} height={211} alt className="af-class-img" /></div>
+                  {this.renderImageItems()}
                 </div>
               </div>
             </div>
