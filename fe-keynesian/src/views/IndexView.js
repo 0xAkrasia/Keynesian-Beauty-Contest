@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { createScope, map, transformProxies } from './helpers'
+import { createWeb3Modal, defaultConfig } from '@web3modal/ethers5/react'
 
 const scripts = [
   { loading: fetch("https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=65f8d5e4ed1fa366d79954b8").then(body => body.text()), isAsync: false },
@@ -9,6 +10,53 @@ const scripts = [
 ]
 
 let Controller
+
+const projectId = '2306be42fa635e4c7f57e5002e25f088';
+
+const mainnet = {
+  chainId: 1,
+  name: 'Ethereum',
+  currency: 'ETH',
+  explorerUrl: 'https://etherscan.io',
+  rpcUrl: 'https://cloudflare-eth.com'
+};
+
+const polygon = {
+  chainId: 137,
+  name: 'Polygon',
+  currency: 'MATIC',
+  explorerUrl: 'https://polygonscan.com/',
+  rpcUrl: 'https://polygon-rpc.com/'
+}
+
+const bsc = {
+  chainId: 56,
+  name: 'BSC',
+  currency: 'BNB',
+  explorerUrl: 'https://polygonscan.com/',
+  rpcUrl: 'https://bscscan.com/'
+}
+
+const inco = {
+  chainId: 9090,
+  name: 'INCO Testnet',
+  currency: 'INCO',
+  explorerUrl: 'https://explorer.testnet.inco.org',
+  rpcUrl: 'https://testnet.inco.org'
+}
+
+const metadata = {
+  name: 'Crypti Talk',
+  description: 'Decentralized AI and Advertisible NFT',
+  url: 'https://app.cryptitalk.com',
+  icons: ['https://storage.googleapis.com/cryptitalk/cryptitalk.png']
+};
+
+const modal = createWeb3Modal({
+  ethersConfig: defaultConfig({ metadata }),
+  chains: [mainnet, polygon, bsc, inco],
+  projectId
+});
 
 class IndexView extends React.Component {
 
@@ -130,6 +178,11 @@ class IndexView extends React.Component {
         <span className="af-view">
           <div className="af-class-body">
             <div className="af-class-game-container">
+              <div className="af-class-header w-clearfix">
+                <div className="af-class-button-container">
+                  <w3m-button label="Connect" balance="hide" size="sm">Connect</w3m-button>
+                </div>
+              </div>
               <div className="af-class-game-header">
                 <div className="af-class-game-title">
                   <div className="af-class-h1">Keynesian contest </div>
