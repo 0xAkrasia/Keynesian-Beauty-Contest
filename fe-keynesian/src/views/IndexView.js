@@ -2,8 +2,13 @@
 
 import React from 'react'
 import { createScope, map, transformProxies } from './helpers'
-import { createWeb3Modal, defaultConfig } from '@web3modal/ethers5/react'
+import { createWeb3Modal, defaultConfig } from '@web3modal/ethers/react'
+import { initFhevm, createInstance } from "fhevmjs"
+import { BrowserProvider, Contract } from 'ethers';
+import { AbiCoder } from 'ethers';
+import contractAbi from '../abi/KeynsianBeautyContest.json';
 
+// Initiate wallet modal
 const scripts = [
   { loading: fetch("https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=65f8d5e4ed1fa366d79954b8").then(body => body.text()), isAsync: false },
   { loading: fetch("js/webflow.js").then(body => body.text()), isAsync: false },
@@ -58,6 +63,10 @@ const modal = createWeb3Modal({
   projectId
 });
 
+initFhevm()
+
+let instance;
+
 class IndexView extends React.Component {
 
   constructor(props) {
@@ -86,6 +95,62 @@ class IndexView extends React.Component {
       return { selectedImages: newSelectedImages };
     });
   }
+
+  convertToUint8(selectedImageIdsArray) {
+    let result = 0; // Initialize the result as a number with all bits set to 0.
+
+    // Assuming image IDs start at 1 and go up to 8.
+    selectedImageIdsArray.forEach((id) => {
+      if (id >= 1 && id <= 8) {
+        result |= 1 << (id - 1); // Set the bit corresponding to the image ID.
+      } else {
+        throw new Error('Image ID is out of range. It should be between 1 and 8, inclusive.');
+      }
+    });
+
+    return result;
+  }
+
+  async handleBet(event) {
+    event.preventDefault();
+
+    
+    try {
+      const walletProvider = await modal.getWalletProvider();
+      const web3Provider = new BrowserProvider(walletProvider);
+
+      // Initiate FHE
+      const FHE_LIB_ADDRESS = "0x000000000000000000000000000000000000005d";
+      const network = await web3Provider.getNetwork();
+      const chainId = +network.chainId.toString();
+      const ret = await web3Provider.call({
+        to: FHE_LIB_ADDRESS,
+        data: "0xd9d47bb001",
+      });
+      const decoded = AbiCoder.defaultAbiCoder().decode(["bytes"], ret);
+      const publicKey = decoded[0];
+      instance = await createInstance({ chainId, publicKey });
+      console.log("FHE instance created", instance);
+
+      const signer = await web3Provider.getSigner();
+      console.log('Signer:', signer);
+
+      // Define the contract ABI and address
+      const contractAddress = '0x04eDd932fDc43Bb14861462Fd9ab9fab4C3a6c2c';
+
+      const contract = new Contract(contractAddress, contractAbi, signer);
+      const selectedImageIdsArray = Array.from(this.state.selectedImages);
+      const voteUint8 = this.convertToUint8(selectedImageIdsArray);
+      const encryptedVote = instance.encrypt8(voteUint8);
+      const tx = await contract.castVote(encryptedVote);
+      await tx.wait();
+      alert('Vote cast successfully');
+    } catch (error) {
+      console.error('Error casting vote:', error);
+      alert('Failed to cast vote');
+    }
+  }
+
 
   renderImageItems() {
     const imageIds = ['img', 'img_1', 'img_2', 'img_3', 'img_4', 'img_5', 'img_6', 'img_7'];
@@ -201,13 +266,9 @@ class IndexView extends React.Component {
               </div>
               <div className="af-class-bet-input">
                 <div className="af-class-form-block w-form">
-                  <form id="wf-form-amount" name="wf-form-amount" data-name="amount" method="get" className="af-class-form" data-wf-page-id="65f8d5e4ed1fa366d79954e6" data-wf-element-id="e7861668-ca28-fc22-0336-d64cfa723b73"><input className="af-class-text-field w-input" maxLength={256} name="amount" data-name="amount" placeholder="Amount" type="number" id="amount" /><input type="submit" data-wait="Please wait..." className="af-class-submit-button w-button" defaultValue="Bet" /></form>
-                  <div className="af-class-success-message w-form-done">
-                    <div>Thank you! Your submission has been received!</div>
-                  </div>
-                  <div className="af-class-error-message w-form-fail">
-                    <div>Oops! Something went wrong while submitting the form.</div>
-                  </div>
+                  <form id="wf-form-amount" name="wf-form-amount" data-name="amount" method="get" className="af-class-form" onSubmit={this.handleBet.bind(this)}>
+                    <input type="submit" data-wait="Please wait..." className="af-class-submit-button w-button" value="Bet" />
+                  </form>
                 </div>
               </div>
               <div className="w-layout-vflex af-class-flex-block">
