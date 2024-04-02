@@ -316,13 +316,34 @@
 }
 
 .af-view .af-class-submit-button {
-  background-color: var(--brand);
-  color: var(--black);
+  background-color: #ff8700;
+  color: var(--white); /* switch to white text for better contrast */
+  border: 2px solid var(--white); /* add a white border for distinction */
   border-radius: 12px;
   padding: 16px 40px;
   font-size: 20px;
-  font-weight: 600;
-  line-height: 24px;
+  font-weight: 700; /* increase the weight for a bolder look */
+  line-height: 1.4; /* you could also use a unit like '24px' if preferred */
+  text-transform: uppercase; /* capitalize all text to stand out */
+  cursor: pointer; /* make it clear it's a button */
+  transition: all 0.2s ease-in-out; /* smooth transition for interactive states */
+}
+
+/* Add interactive states for the button */
+.af-view .af-class-submit-button:hover,
+.af-view .af-class-submit-button:focus {
+  background-color: var(--white); /* change the background color on hover/focus */
+  color: var(--brand); /* change text color to brand color on hover/focus */
+  border: 2px solid var(--brand); /* make the border brand color for consistency */
+  outline: none; /* remove the outline to prevent double borders on focus */
+}
+
+/* Adjusted to ensure compatibility with web design */
+@media screen and (max-width: 767px) {
+  .af-view .af-class-submit-button {
+    font-size: 18px; /* adjust font size for smaller screens */
+    padding: 12px 30px; /* adjust padding for smaller screens */
+  }
 }
 
 .af-view .af-class-error-message, .af-view .af-class-success-message {
