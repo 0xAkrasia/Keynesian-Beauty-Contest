@@ -101,9 +101,13 @@ class IndexView extends React.Component {
 
     // Assuming image IDs start at 1 and go up to 8.
     selectedImageIdsArray.forEach((id) => {
+      const imageIds = ['img', 'img_1', 'img_2', 'img_3', 'img_4', 'img_5', 'img_6', 'img_7'];
+      // map image ID to a number between 1 and 8
+      id = imageIds.indexOf(id) + 1;
       if (id >= 1 && id <= 8) {
         result |= 1 << (id - 1); // Set the bit corresponding to the image ID.
       } else {
+        console.log('selected id', id);
         throw new Error('Image ID is out of range. It should be between 1 and 8, inclusive.');
       }
     });
@@ -111,27 +115,58 @@ class IndexView extends React.Component {
     return result;
   }
 
+  async createInstance(web3Provider) {
+    // Initiate FHE
+    const FHE_LIB_ADDRESS = "0x000000000000000000000000000000000000005d";
+    const network = await web3Provider.getNetwork();
+    const chainId = +network.chainId.toString();
+    const ret = await web3Provider.call({
+      to: FHE_LIB_ADDRESS,
+      data: "0xd9d47bb001",
+    });
+    const decoded = AbiCoder.defaultAbiCoder().decode(["bytes"], ret);
+    const publicKey = decoded[0];
+    instance = await createInstance({ chainId, publicKey });
+    console.log("FHE instance created", instance);
+    return instance;
+  }
+
+
+  async getReencryptPublicKey(web3Provider, userAddress, contractAddress) {
+    try {
+      instance = await this.createInstance(web3Provider);
+      if (!instance.hasKeypair(contractAddress)) {
+        const eip712Domain = {
+          name: 'Authorization token',
+          version: '1',
+          chainId: 9090,
+          verifyingContract: contractAddress,
+        };
+
+        const reencryption = instance.generatePublicKey(eip712Domain);
+        const params = [userAddress, JSON.stringify(reencryption.eip712)];
+        const sig = window.ethereum.request({
+          method: "eth_signTypedData_v4",
+          params,
+        });
+
+        instance.setSignature(contractAddress, sig);
+        return instance.getPublicKey(contractAddress);
+      }
+    } catch (error) {
+      console.error('Error casting vote:', error);
+      alert('Failed to cast vote');
+    }
+    return null;
+  }
+
   async handleBet(event) {
     event.preventDefault();
 
-    
     try {
       const walletProvider = await modal.getWalletProvider();
       const web3Provider = new BrowserProvider(walletProvider);
-
-      // Initiate FHE
-      const FHE_LIB_ADDRESS = "0x000000000000000000000000000000000000005d";
-      const network = await web3Provider.getNetwork();
-      const chainId = +network.chainId.toString();
-      const ret = await web3Provider.call({
-        to: FHE_LIB_ADDRESS,
-        data: "0xd9d47bb001",
-      });
-      const decoded = AbiCoder.defaultAbiCoder().decode(["bytes"], ret);
-      const publicKey = decoded[0];
-      instance = await createInstance({ chainId, publicKey });
-      console.log("FHE instance created", instance);
-
+      instance = await this.createInstance(web3Provider);
       const signer = await web3Provider.getSigner();
       console.log('Signer:', signer);
 
@@ -149,6 +184,39 @@ class IndexView extends React.Component {
       console.error('Error casting vote:', error);
       alert('Failed to cast vote');
     }
+  }
+
+  async handleViewOwnVote(event) {
+    event.preventDefault();
+    // Logic to view voter's own vote
+    const walletProvider = await modal.getWalletProvider();
+    const web3Provider = new BrowserProvider(walletProvider);
+    const signer = await web3Provider.getSigner();
+    const userAddress= await signer.getAddress();
+    const contractAddress = '0x04eDd932fDc43Bb14861462Fd9ab9fab4C3a6c2c';
+    const reencrypt = await this.getReencryptPublicKey(web3Provider, userAddress, contractAddress);
+    const reencryptPublicKeyHexString = "0x" + Array.from(reencrypt.publicKey)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    const contract = new Contract(contractAddress, contractAbi, signer);
+    const encryptedVote = await contract.viewOwnVote(reencryptPublicKeyHexString, reencrypt.signature);
+    const vote = await instance.decrypt(contractAddress, encryptedVote);
+    alert(`Your vote: ${vote.toString(2)}`);
+  }
+
+  handleWinCheck(event) {
+    event.preventDefault();
+    // Logic to check for win
+  }
+
+  handleRevealResult(event) {
+    event.preventDefault();
+    // Logic to reveal results
+  }
+
+  handlePayWinners(event) {
+    event.preventDefault();
+    // Logic to pay winners
   }
 
 
@@ -266,8 +334,22 @@ class IndexView extends React.Component {
               </div>
               <div className="af-class-bet-input">
                 <div className="af-class-form-block w-form">
-                  <form id="wf-form-amount" name="wf-form-amount" data-name="amount" method="get" className="af-class-form" onSubmit={this.handleBet.bind(this)}>
-                    <input type="submit" data-wait="Please wait..." className="af-class-submit-button w-button" value="Bet" />
+                  <form id="wf-form-amount" name="wf-form-amount" data-name="amount" method="get" className="af-class-form">
+                    <button type="submit" data-wait="Please wait..." className="af-class-submit-button w-button" onClick={this.handleBet.bind(this)}>
+                      Cast Vote
+                    </button>
+                    <button type="button" className="af-class-submit-button w-button" onClick={this.handleViewOwnVote.bind(this)}>
+                      View Own Vote
+                    </button>
+                    <button type="button" className="af-class-submit-button w-button" onClick={this.handleWinCheck.bind(this)}>
+                      Win Check
+                    </button>
+                    <button type="button" className="af-class-submit-button w-button" onClick={this.handleRevealResult.bind(this)}>
+                      Reveal Result
+                    </button>
+                    <button type="button" className="af-class-submit-button w-button" onClick={this.handlePayWinners.bind(this)}>
+                      Pay Winners
+                    </button>
                   </form>
                 </div>
               </div>
