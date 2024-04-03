@@ -204,19 +204,72 @@ class IndexView extends React.Component {
     alert(`Your vote: ${vote.toString(2)}`);
   }
 
-  handleWinCheck(event) {
+  async handleWinCheck(event) {
     event.preventDefault();
-    // Logic to check for win
+  
+    try {
+      const walletProvider = await modal.getWalletProvider();
+      const web3Provider = new BrowserProvider(walletProvider);
+      const signer = await web3Provider.getSigner();
+      console.log('Signer:', signer);
+      const contractAddress = '0x04eDd932fDc43Bb14861462Fd9ab9fab4C3a6c2c';
+
+      const contract = new Contract(contractAddress, contractAbi, signer);
+      // Call the winCheck function of the contract
+      const tx = await contract.winCheck();
+      await tx.wait();
+      alert('Win check transaction sent');
+    } catch (error) {
+      console.error('Error during win check:', error);
+      alert('Failed to check wins');
+    }
+  }
+  
+
+  async handleRevealResult(event) {
+    event.preventDefault();
+  
+    try {
+      const walletProvider = await modal.getWalletProvider();
+      const web3Provider = new BrowserProvider(walletProvider);
+      const signer = await web3Provider.getSigner();
+      console.log('Signer:', signer);
+      const contractAddress = '0x04eDd932fDc43Bb14861462Fd9ab9fab4C3a6c2c';
+
+      const contract = new Contract(contractAddress, contractAbi, signer);
+  
+      // Call the revealResult function of the contract
+      const tx = await contract.revealResult();
+      await tx.wait();
+      alert('Result reveal transaction sent');
+    } catch (error) {
+      console.error('Error during result reveal:', error);
+      alert('Failed to reveal result');
+    }
   }
 
-  handleRevealResult(event) {
+  async handlePayWinners(event) {
     event.preventDefault();
-    // Logic to reveal results
-  }
-
-  handlePayWinners(event) {
-    event.preventDefault();
-    // Logic to pay winners
+  
+    try {
+      const walletProvider = await modal.getWalletProvider();
+      const web3Provider = new BrowserProvider(walletProvider);
+      const signer = await web3Provider.getSigner();
+      console.log('Signer:', signer);
+      const contractAddress = '0x04eDd932fDc43Bb14861462Fd9ab9fab4C3a6c2c';
+      const contract = new Contract(contractAddress, contractAbi, signer);
+      // Assuming that payWinners requires a start and offset for batch processing
+      const start = 0; // Starting index, might need to be dynamic or user-provided
+      const offset = 10; // Number of winners to process, might need to be dynamic or user-provided
+  
+      // Call the payWinners function of the contract
+      const tx = await contract.payWinners(start, offset);
+      await tx.wait();
+      alert('Pay winners transaction sent');
+    } catch (error) {
+      console.error('Error during payout to winners:', error);
+      alert('Failed to pay winners');
+    }
   }
 
 
