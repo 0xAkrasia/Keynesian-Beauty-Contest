@@ -76,10 +76,45 @@ class IndexView extends React.Component {
     this.state = {
       selectedImages: new Set(),
       countdownTime: 12 * 3600 + 23 * 60 + 41,
+      isWalletConnected: false,
+      userHasVoted: false,
     };
 
     this.handleImageClick = this.handleImageClick.bind(this);
     this.tick = this.tick.bind(this);
+    this.handleConnectWallet = this.handleConnectWallet.bind(this);
+  }
+
+  // Implement the checkVotingStatus method to interact with the smart contract and find out if the user has voted
+  async checkVotingStatus(signer) {
+    const contractAddress = '0x04eDd932fDc43Bb14861462Fd9ab9fab4C3a6c2c';
+    const contract = new Contract(contractAddress, contractAbi, signer);
+    // there is mapping(address => bool) public hasVoted in the contract, can we check if user has voted
+    const userAddress = await signer.getAddress();
+    const hasVoted = await contract.hasVoted(userAddress);
+    console.log('User has voted:', hasVoted);
+    return hasVoted;
+  }
+
+  // Handles the logic for connecting to the user's wallet
+  async handleConnectWallet() {
+    try {
+      console.log('Connecting wallet...');
+      //const walletProvider = await modal.getWalletProvider();
+      const web3Provider = new BrowserProvider(window.ethereum);
+      const signer = await web3Provider.getSigner();
+      if (signer) {
+        console.log("checkVotingStatus")
+        const userHasVoted = await this.checkVotingStatus(signer);
+        this.setState({ isWalletConnected: true, userHasVoted });
+      } else {
+        // Handle case if user rejects connection or there's an error
+        this.setState({ isWalletConnected: false, userHasVoted: false });
+      }
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      this.setState({ isWalletConnected: false, userHasVoted: false });
+    }
   }
 
   handleImageClick(imageId) {
@@ -186,13 +221,30 @@ class IndexView extends React.Component {
     }
   }
 
+  uint8ToSelectedImageIds(voteUint8) {
+    console.log('voteUint8:', voteUint8);
+    // Ensure that voteUint8 is a BigInt
+    const voteBigInt = BigInt(voteUint8);
+    const imageIds = ['img', 'img_1', 'img_2', 'img_3', 'img_4', 'img_5', 'img_6', 'img_7'];
+    const selectedImageIds = [];
+  
+    for (let i = 0; i < imageIds.length; i++) {
+      // Use BigInt for bitwise operations
+      if ((voteBigInt & (BigInt(1) << BigInt(i))) !== BigInt(0)) {
+        selectedImageIds.push(imageIds[i]);
+      }
+    }
+  
+    return selectedImageIds;
+  }  
+
   async handleViewOwnVote(event) {
     event.preventDefault();
     // Logic to view voter's own vote
     const walletProvider = await modal.getWalletProvider();
     const web3Provider = new BrowserProvider(walletProvider);
     const signer = await web3Provider.getSigner();
-    const userAddress= await signer.getAddress();
+    const userAddress = await signer.getAddress();
     const contractAddress = '0x04eDd932fDc43Bb14861462Fd9ab9fab4C3a6c2c';
     const reencrypt = await this.getReencryptPublicKey(web3Provider, userAddress, contractAddress);
     const reencryptPublicKeyHexString = "0x" + Array.from(reencrypt.publicKey)
@@ -200,13 +252,17 @@ class IndexView extends React.Component {
       .join('');
     const contract = new Contract(contractAddress, contractAbi, signer);
     const encryptedVote = await contract.viewOwnVote(reencryptPublicKeyHexString, reencrypt.signature);
-    const vote = await instance.decrypt(contractAddress, encryptedVote);
-    alert(`Your vote: ${vote.toString(2)}`);
+    const voteUint8 = await instance.decrypt(contractAddress, encryptedVote);
+    const selectedImageIdsArray = this.uint8ToSelectedImageIds(voteUint8);
+    this.setState({
+      selectedImages: new Set(selectedImageIdsArray),
+    });
+    alert(`Your vote: ${selectedImageIdsArray.join(', ')}`);
   }
 
   async handleWinCheck(event) {
     event.preventDefault();
-  
+
     try {
       const walletProvider = await modal.getWalletProvider();
       const web3Provider = new BrowserProvider(walletProvider);
@@ -224,11 +280,11 @@ class IndexView extends React.Component {
       alert('Failed to check wins');
     }
   }
-  
+
 
   async handleRevealResult(event) {
     event.preventDefault();
-  
+
     try {
       const walletProvider = await modal.getWalletProvider();
       const web3Provider = new BrowserProvider(walletProvider);
@@ -237,7 +293,7 @@ class IndexView extends React.Component {
       const contractAddress = '0x04eDd932fDc43Bb14861462Fd9ab9fab4C3a6c2c';
 
       const contract = new Contract(contractAddress, contractAbi, signer);
-  
+
       // Call the revealResult function of the contract
       const tx = await contract.revealResult();
       await tx.wait();
@@ -250,7 +306,7 @@ class IndexView extends React.Component {
 
   async handlePayWinners(event) {
     event.preventDefault();
-  
+
     try {
       const walletProvider = await modal.getWalletProvider();
       const web3Provider = new BrowserProvider(walletProvider);
@@ -261,7 +317,7 @@ class IndexView extends React.Component {
       // Assuming that payWinners requires a start and offset for batch processing
       const start = 0; // Starting index, might need to be dynamic or user-provided
       const offset = 10; // Number of winners to process, might need to be dynamic or user-provided
-  
+
       // Call the payWinners function of the contract
       const tx = await contract.payWinners(start, offset);
       await tx.wait();
@@ -308,7 +364,7 @@ class IndexView extends React.Component {
     }
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     const htmlEl = document.querySelector('html')
     htmlEl.dataset['wfPage'] = '65f8d5e4ed1fa366d79954e6'
     htmlEl.dataset['wfSite'] = '65f8d5e4ed1fa366d79954b8'
@@ -327,6 +383,7 @@ class IndexView extends React.Component {
 
       return active.isAsync ? next : loading
     }))
+    await this.handleConnectWallet();
   }
 
   componentWillUnmount() {
@@ -388,12 +445,19 @@ class IndexView extends React.Component {
               <div className="af-class-bet-input">
                 <div className="af-class-form-block w-form">
                   <form id="wf-form-amount" name="wf-form-amount" data-name="amount" method="get" className="af-class-form">
-                    <button type="submit" data-wait="Please wait..." className="af-class-submit-button w-button" onClick={this.handleBet.bind(this)}>
-                      Cast Vote
-                    </button>
-                    <button type="button" className="af-class-submit-button w-button" onClick={this.handleViewOwnVote.bind(this)}>
-                      View Own Vote
-                    </button>
+                    {/* Conditionally render the buttons based on the state */}
+                    {
+                      (!this.state.userHasVoted ?
+                        <button type="submit" data-wait="Please wait..." className="af-class-submit-button w-button" onClick={this.handleBet.bind(this)}>
+                          Cast Vote
+                        </button>
+                        :
+                        <button type="button" className="af-class-submit-button w-button" onClick={this.handleViewOwnVote.bind(this)}>
+                          View Own Vote
+                        </button>
+                      )
+                    }
+                    {/*
                     <button type="button" className="af-class-submit-button w-button" onClick={this.handleWinCheck.bind(this)}>
                       Win Check
                     </button>
@@ -403,11 +467,12 @@ class IndexView extends React.Component {
                     <button type="button" className="af-class-submit-button w-button" onClick={this.handlePayWinners.bind(this)}>
                       Pay Winners
                     </button>
+                    */}
                   </form>
                 </div>
               </div>
               <div className="w-layout-vflex af-class-flex-block">
-                <div className="af-class-p_body">Select 4 faces to bet</div>
+                <div className="af-class-p_body">Select the four most popular faces from the crowd to win the pot</div>
                 <div className="af-class-selection-grid">
                   {this.renderImageItems()}
                 </div>

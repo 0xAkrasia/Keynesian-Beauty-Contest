@@ -1,3 +1,10 @@
+html, body {
+  background-color: #000; /* Black */
+  margin: 0; /* Remove default margin */
+  padding: 0; /* Remove default padding */
+  height: 100%; /* Ensure the html and body fill the viewport height */
+}
+
 .af-view :root {
   --chakra-petch: "Chakra Petch", sans-serif;
   --brand: #ff8700;
@@ -244,16 +251,18 @@
   padding: 8px;
   text-decoration: none;
   display: flex;
+  cursor: pointer; /* Add cursor to indicate item is clickable */
+  transition: border 0.3s ease, margin 0.3s ease, outline 0.3s ease; /* Smooth transition for the border, margin, and outline changes */
+  margin: 4px; /* Adjust the margin to create a small gap between items */
 }
 
 .af-view .af-class-item.af-class-selected {
-  border: 2px solid var(--brand); /* Adjust the border thickness */
-  opacity: 0.7; /* Slightly fade the image to indicate selection */
-  transform: scale(1.1); /* Scale the image to make it pop */
-  box-shadow: 0 0 10px var(--brand); /* Add a shadow with the brand color */
-  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease; /* Smooth transition for the effect */
-  cursor: pointer; /* Change cursor to indicate the item is selectable */
+  border: 2px solid transparent; /* Make the border transparent to prevent it from adding to the element's size */
+  outline: 2px solid #FFA500; /* Orange outline for selected items (does not take up layout space) */
+  margin: 2px; /* Reduce the margin to give the outline space and make adjacent outlines not overlap */
+  outline-offset: -2px; /* Optional: Pull the outline closer to the border edge */
 }
+
 
 .af-view .af-class-img {
   object-fit: cover;
@@ -323,6 +332,7 @@
   padding: 16px 40px;
   font-size: 20px;
   font-weight: 700; /* increase the weight for a bolder look */
+  font-family: Casino, sans-serif;
   line-height: 1.4; /* you could also use a unit like '24px' if preferred */
   text-transform: uppercase; /* capitalize all text to stand out */
   cursor: pointer; /* make it clear it's a button */
