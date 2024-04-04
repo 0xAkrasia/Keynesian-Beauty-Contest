@@ -332,9 +332,8 @@ html, body {
   padding: 16px 40px;
   font-size: 20px;
   font-weight: 700; /* increase the weight for a bolder look */
-  font-family: Casino, sans-serif;
+  font-family: Chakra Petch, sans-serif;
   line-height: 1.4; /* you could also use a unit like '24px' if preferred */
-  text-transform: uppercase; /* capitalize all text to stand out */
   cursor: pointer; /* make it clear it's a button */
   transition: all 0.2s ease-in-out; /* smooth transition for interactive states */
 }
@@ -346,6 +345,16 @@ html, body {
   color: var(--brand); /* change text color to brand color on hover/focus */
   border: 2px solid var(--brand); /* make the border brand color for consistency */
   outline: none; /* remove the outline to prevent double borders on focus */
+}
+
+.af-class-entry-received-message {
+  margin: 2em 0; /* Add more space above and below the message */
+  font-size: 1.5rem; /* Increase the font size for visibility */
+  color: #ff8700; /* Set text color to match your brand orange */
+  text-align: center; /* Keep text centered */
+  font-weight: bold; /* Make the font bold for emphasis */
+  text-shadow: 0 0 8px #ff8700; /* Add a subtle glow effect to match other headings */
+  font-family: 'Chakra Petch', sans-serif; /* Use the defined Chakra Petch font-family */
 }
 
 /* Adjusted to ensure compatibility with web design */

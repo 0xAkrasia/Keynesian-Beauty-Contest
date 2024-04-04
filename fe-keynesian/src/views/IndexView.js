@@ -257,7 +257,6 @@ class IndexView extends React.Component {
     this.setState({
       selectedImages: new Set(selectedImageIdsArray),
     });
-    alert(`Your vote: ${selectedImageIdsArray.join(', ')}`);
   }
 
   async handleWinCheck(event) {
@@ -429,7 +428,7 @@ class IndexView extends React.Component {
               <div className="af-class-game-header">
                 <div className="af-class-game-title">
                   <div className="af-class-h1">Keynesian contest </div>
-                  <div className="af-class-p_body">You are rewarded for selecting the most popular faces among all participants.</div>
+                  <div className="af-class-p_body">Select the four most popular faces from the crowd to win the pot.</div>
                 </div>
                 <div className="af-class-game-stats">
                   <div className="af-class-typehead">
@@ -452,9 +451,15 @@ class IndexView extends React.Component {
                           Cast Vote
                         </button>
                         :
-                        <button type="button" className="af-class-submit-button w-button" onClick={this.handleViewOwnVote.bind(this)}>
-                          View Own Vote
-                        </button>
+                        <div>
+                          {/* New message element added */}
+                          <div className="af-class-entry-received-message">
+                            Your entry has been received!
+                          </div>
+                          <button type="button" className="af-class-submit-button w-button" onClick={this.handleViewOwnVote.bind(this)}>
+                            View Your Vote
+                          </button>
+                        </div>
                       )
                     }
                     {/*
@@ -472,7 +477,6 @@ class IndexView extends React.Component {
                 </div>
               </div>
               <div className="w-layout-vflex af-class-flex-block">
-                <div className="af-class-p_body">Select the four most popular faces from the crowd to win the pot</div>
                 <div className="af-class-selection-grid">
                   {this.renderImageItems()}
                 </div>
