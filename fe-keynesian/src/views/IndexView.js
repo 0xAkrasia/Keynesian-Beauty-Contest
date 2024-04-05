@@ -7,6 +7,18 @@ import { initFhevm, createInstance } from "fhevmjs"
 import { BrowserProvider, Contract } from 'ethers';
 import { AbiCoder } from 'ethers';
 import contractAbi from '../abi/KeynsianBeautyContest.json';
+import { usePrivy } from '@privy-io/react-auth';
+
+// Define a Higher Order Component that wraps the original component
+function withPrivyLogin(Component) {
+  // This function component uses the hook
+  function WithPrivyLogin(props) {
+    const { login } = usePrivy();
+    // Pass the hook function as a prop to the class component
+    return <Component {...props} login={login} />;
+  }
+  return WithPrivyLogin; // Return the wrapped component
+}
 
 // Initiate wallet modal
 const scripts = [
@@ -385,6 +397,11 @@ class IndexView extends React.Component {
     await this.handleConnectWallet();
   }
 
+  async handleLogin () {
+        const { login } = this.props;
+        login();
+    };
+
   componentWillUnmount() {
     // Clear the countdown interval to prevent memory leaks
     clearInterval(this.countdownTimer);
@@ -422,7 +439,9 @@ class IndexView extends React.Component {
             <div className="af-class-game-container">
               <div className="af-class-header w-clearfix">
                 <div className="af-class-button-container">
-                  <w3m-button label="Connect" balance="hide" size="sm">Connect</w3m-button>
+                  <button type="submit" data-wait="Please wait..." className="af-class-submit-button w-button" onClick={this.handleLogin.bind(this)}>
+                          Login
+                        </button>
                 </div>
               </div>
               <div className="af-class-game-header">
@@ -489,6 +508,6 @@ class IndexView extends React.Component {
   }
 }
 
-export default IndexView
+export default withPrivyLogin(IndexView);
 
 /* eslint-enable */
